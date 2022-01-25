@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 
 import sys
-sys.path.append('/home/weiyu/program/metro_expand_combination/att3/')
+sys.path.append('/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/')
 from metro_vrp import MetroDataset
 import metro_vrp
 

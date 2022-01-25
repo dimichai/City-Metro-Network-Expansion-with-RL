@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader
 
 import matplotlib.pyplot as plt
 import sys
-sys.path.append('/home/weiyu/program/metro_expand_combination/att3/')
+sys.path.append('/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/')
 
 from metro_model import DRL4Metro, Encoder
 import metro_vrp
@@ -534,7 +534,7 @@ if __name__ == '__main__':
      parser.add_argument('--actor_lr', default=5e-4, type=float)
      parser.add_argument('--critic_lr', default=5e-4, type=float)
      parser.add_argument('--max_grad_norm', default=2., type=float)
-     parser.add_argument('--batch_size', default=1, type=int)
+     parser.add_argument('--batch_size', default=128, type=int)
      parser.add_argument('--hidden', dest='hidden_size', default=128, type=int)
      parser.add_argument('--dropout', default=0.1, type=float)
      parser.add_argument('--layers', dest='num_layers', default=1, type=int)
@@ -574,9 +574,9 @@ if __name__ == '__main__':
      # if social_equity= 2, reward contains the second social equity: equal sharing
      #                             reward = factor_weight1*reward_od - (1 - factor_weight1)*agent_Ac
      
-     parser.add_argument('--result_path', default='/home/weiyu/program/metro_expand_combination/att3/result/', type=str)
-     parser.add_argument('--od_index_path', default='/home/weiyu/program/metro_expand_combination/att3/od_index.txt', type=str)
-     parser.add_argument('--path_house', default='/home/weiyu/program/metro_expand_combination/att3/index_average_price.txt', type=str)
+     parser.add_argument('--result_path', default='/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/result/', type=str)
+     parser.add_argument('--od_index_path', default='/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/od_index.txt', type=str)
+     parser.add_argument('--path_house', default='/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/index_average_price.txt', type=str)
     
      args = parser.parse_args()
     
