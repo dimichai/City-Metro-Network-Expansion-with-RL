@@ -6,12 +6,13 @@ import numpy as np
 import math
 import torch
 from torch.utils.data import Dataset
-from torch.autograd import Variable
+# from torch.autograd import Variable
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-device = torch.device('cuda:1')
+# device = torch.device('cuda:1')
+device = torch.device('cpu')
 
 
 class MetroDataset(Dataset):
@@ -20,14 +21,18 @@ class MetroDataset(Dataset):
 
         super(MetroDataset, self).__init__()
 
+        # the size of the final grid the city will be split into
+        # e.g. 29x29 = 29x29 squares = 841 squares.
         self.grid_x_max = grid_x_max
         self.grid_y_max = grid_y_max
         self.grid_index1_max = grid_y_max - 1 # The max index of the first dimension
         self.grid_index2_max = grid_x_max - 1 # The max index of the second dimension
+        # no idea
         self.static_size = static_size
         self.dynamic_size = dynamic_size
 
         self.grid_num = grid_x_max*grid_y_max
+        # lines that exist before the creation of the new line
         self.exist_line_num = exist_line_num
 
 
@@ -134,6 +139,7 @@ class MetroDataset(Dataset):
         # np_line2_station = np.array(line2_ststion_list)
         # np_line3_station = np.array(line3_ststion_list)
 
+        # converts line tuples [x, y] into a series of grid positions
         index_line0_station = g_to_v1(np_line0_station)
         index_line1_station = g_to_v1(np_line1_station)
         # index_line2_station = g_to_v1(np_line2_station)
@@ -144,6 +150,7 @@ class MetroDataset(Dataset):
         # index_line2_station = [int(i) for i in index_line2_station]
         # index_line3_station = [int(i) for i in index_line3_station]
 
+        # list of lists of each line's grid indexes
         index_line_station_list = []
         index_line_station_list.append(index_line0_station)
         index_line_station_list.append(index_line1_station)
@@ -160,6 +167,7 @@ class MetroDataset(Dataset):
         self.line_station_list = index_line_station_list
 
 ##################build full cross grid including the grids which have no station
+        # some lines pass by some squares but there is no station there - these lines cover the cases when this happens
 
         line0_full_list = [[8, 2], [10, 3], [10, 4], [10, 5], [11, 6], [11, 7], [12, 9], [12, 10],[12, 11], [12, 12], [12, 13],
                            [12, 14], [12, 15], [12, 16], [12, 17], [12, 18], [12, 19], [12, 20], [11, 22], [11, 23], [11, 24],
