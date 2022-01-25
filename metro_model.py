@@ -1,17 +1,19 @@
+from asyncio.proactor_events import constants
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
 import sys
-sys.path.append('/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/')
+import constants
+sys.path.append(constants.WORKING_DIR)
 from metro_vrp import MetroDataset
 import metro_vrp
 
 
 
 
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 print('device:',device)
 

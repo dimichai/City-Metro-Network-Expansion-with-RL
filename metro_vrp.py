@@ -11,8 +11,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# device = torch.device('cuda:1')
-device = torch.device('cpu')
+# device = torch.device('cuda:0')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 
 
 class MetroDataset(Dataset):
@@ -213,6 +214,10 @@ class MetroDataset(Dataset):
         # index_line_full_list.append(index_line7_station)
         # index_line_full_list.append(index_line8_station)
         ###
+
+        # create an adjacency matrix of the grid squares based on all the existing lines.
+        # adjacency is defined as being +1 or +2 steps next to the station in the existing lines.
+        # o1 -- o2 -- o3 -- o4 -- o5 -> adjacent to o3 are o1, o2, o4, o5
         exi_sta_adj_sta = {}
         index_line_list = index_line_full_list
 

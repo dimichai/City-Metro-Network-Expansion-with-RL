@@ -11,7 +11,7 @@ import os
 import time
 import argparse
 import datetime
-import numpy as np
+# import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -20,13 +20,14 @@ from torch.utils.data import DataLoader
 
 import matplotlib.pyplot as plt
 import sys
-sys.path.append('/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/')
+import constants
+sys.path.append(constants.WORKING_DIR)
 
 from metro_model import DRL4Metro, Encoder
 import metro_vrp
 
 
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 #device = torch.device('cpu')
 # print(device)
 
@@ -574,9 +575,9 @@ if __name__ == '__main__':
      # if social_equity= 2, reward contains the second social equity: equal sharing
      #                             reward = factor_weight1*reward_od - (1 - factor_weight1)*agent_Ac
      
-     parser.add_argument('--result_path', default='/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/result/', type=str)
-     parser.add_argument('--od_index_path', default='/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/od_index.txt', type=str)
-     parser.add_argument('--path_house', default='/Users/dimichai/projects/phd/City-Metro-Network-Expansion-with-RL/index_average_price.txt', type=str)
+     parser.add_argument('--result_path', default=os.path.join(constants.WORKING_DIR, 'result'), type=str)
+     parser.add_argument('--od_index_path', default=os.path.join(constants.WORKING_DIR, 'od_index.txt'), type=str)
+     parser.add_argument('--path_house', default=os.path.join(constants.WORKING_DIR, 'index_average_price.txt'), type=str)
     
      args = parser.parse_args()
     
