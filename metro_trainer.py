@@ -551,7 +551,7 @@ if __name__ == '__main__':
      # default=None when there is no initial direct, otherwise example: default ='0,2', type = str
     
      parser.add_argument('--station_num_lim', default=45, type=int)  # limit the number of stations in a line
-     parser.add_argument('--budget', default=None)
+     parser.add_argument('--budget', default=210)
      # if budget = None, there is no cost limit.
      # budget example:  default=200, type=int
      parser.add_argument('--line_unit_price', default=1.0, type=float)
@@ -566,7 +566,7 @@ if __name__ == '__main__':
      # #           
     
     
-     parser.add_argument('--social_equity', default=1, type=int)
+     parser.add_argument('--social_equity', default=0, type=int)
      parser.add_argument('--factor_weight', default=1.0, type=float)
      parser.add_argument('--factor_weight1', default=0.5, type=float)
      # if social_equity= 0, reward does not contain the social equality

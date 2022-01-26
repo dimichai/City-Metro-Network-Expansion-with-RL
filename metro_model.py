@@ -166,6 +166,7 @@ class DRL4Metro(nn.Module):
         self.decoder = Encoder(static_size, hidden_size)
         self.pointer = Pointer(hidden_size, num_layers, dropout)
 
+        # initialise parametes with xavier initialisation
         for p in self.parameters():
             if len(p.shape) > 1:
                 nn.init.xavier_uniform_(p)  
