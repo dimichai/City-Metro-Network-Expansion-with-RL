@@ -204,10 +204,10 @@ def train(actor, critic, train_data, reward_fn,
     line_station_list = train_data.line_station_list
 
     # od_index_path = r'/home/weiyu/program/metro_expand_combination/od_index.txt'
-    # od_matirx = metro_vrp.build_od_matrix(grid_num, od_index_path)  #GPU need
-    od_matirx = metro_vrp.build_od_matrix1(grid_num, od_index_path)   #CPU need
+    od_matirx = metro_vrp.build_od_matrix(grid_num, od_index_path)  #GPU need
+    # od_matirx = metro_vrp.build_od_matrix1(grid_num, od_index_path)   #CPU need
     od_matirx =  od_matirx / torch.max(od_matirx)                     #GPU and CPU need
-    # od_matirx = od_matirx.half()  # turn to float16 to recude CUDA memory  GPU need
+    od_matirx = od_matirx.half()  # turn to float16 to recude CUDA memory  GPU need
 
     # exclude the needed od pair
     exclude_pair = metro_vrp.exlude_od_pair(args.grid_x_max)
@@ -275,8 +275,11 @@ def train(actor, critic, train_data, reward_fn,
                 reward = reward.to(device)
 
             else:
-                reward = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
-                                      exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)
+                # reward = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
+                                    #   exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)
+
+                reward = metro_vrp.reward_fn(tour_idx, grid_num, agent_grid_list, line_full_tensor, line_station_list,
+                exist_line_num, od_matirx)
 
                 od_list.append(reward.item())
                 social_equity_list.append(0)

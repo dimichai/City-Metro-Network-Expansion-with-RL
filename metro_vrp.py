@@ -235,13 +235,13 @@ class MetroDataset(Dataset):
         self.line_full_tensor = []
 ###############
         # CPU
-        line_full_tensor0 = torch.tensor(index_line0_full).view(len(line0_full_list), 1)
-        line_full_tensor1 = torch.tensor(index_line1_full).view(len(line1_full_list), 1)
+        # line_full_tensor0 = torch.tensor(index_line0_full).view(len(line0_full_list), 1)
+        # line_full_tensor1 = torch.tensor(index_line1_full).view(len(line1_full_list), 1)
         # line_full_tensor2 = torch.tensor(index_line2_full).view(len(line2_full_list), 1)
         # line_full_tensor3 = torch.tensor(index_line3_full).view(len(line3_full_list), 1)
 
-        self.line_full_tensor.append(line_full_tensor0)
-        self.line_full_tensor.append(line_full_tensor1)
+        # self.line_full_tensor.append(line_full_tensor0)
+        # self.line_full_tensor.append(line_full_tensor1)
         # self.line_full_tensor.append(line_full_tensor2)
         # self.line_full_tensor.append(line_full_tensor3)
 
@@ -262,13 +262,13 @@ class MetroDataset(Dataset):
         # self.line_full_tensor.append(line_full_tensor8)
 #####################
         # GPU
-        # line_full_tensor0 = torch.tensor(index_line0_full).view(len(line0_full_list), 1).to(device)
-        # line_full_tensor1 = torch.tensor(index_line1_full).view(len(line1_full_list), 1).to(device)
+        line_full_tensor0 = torch.tensor(index_line0_full).view(len(line0_full_list), 1).to(device)
+        line_full_tensor1 = torch.tensor(index_line1_full).view(len(line1_full_list), 1).to(device)
         # line_full_tensor2 = torch.tensor(index_line2_full).view(len(line2_full_list), 1).to(device)
         # line_full_tensor3 = torch.tensor(index_line3_full).view(len(line3_full_list), 1).to(device)
         #
-        # self.line_full_tensor.append(line_full_tensor0)
-        # self.line_full_tensor.append(line_full_tensor1)
+        self.line_full_tensor.append(line_full_tensor0)
+        self.line_full_tensor.append(line_full_tensor1)
         # self.line_full_tensor.append(line_full_tensor2)
         # self.line_full_tensor.append(line_full_tensor3)
         #
