@@ -2,6 +2,7 @@ import argparse
 import os
 import constants
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def v_to_g(index, grid_x_max, grid_y_max):
@@ -33,7 +34,8 @@ if __name__ == "__main__":
     with open(avg_price_loc, 'r') as f:
         for line in f:
             g, s = line.rstrip().split('\t')
-            ses[g] = s
+            ses[g] = float(s)
 
     print(ses)
-
+    print(ses.values())
+    plt.plot(ses.values())
