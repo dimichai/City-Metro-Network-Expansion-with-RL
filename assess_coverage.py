@@ -36,6 +36,14 @@ if __name__ == "__main__":
             g, s = line.rstrip().split('\t')
             ses[g] = float(s)
 
-    print(ses)
-    print(ses.values())
-    plt.plot(ses.values())
+    ses_values = np.fromiter(ses.values(), dtype=float)
+    print("25% - " + str(np.percentile(ses_values, 10)))
+    print("75% - " + str(np.percentile(ses_values, 80)))
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+
+    ax.hist(ses.values())
+    fig.suptitle('Xi’an, China - Distribution of average house price (RMB)')
+
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr.png'))
+
