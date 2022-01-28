@@ -458,7 +458,7 @@ def train_vrp(args):
         result_time = '%s' % datetime.datetime.now().time()
         result_time = result_time.replace(':', '_')
 
-        model_solution_path = os.path.join(args.result_path, '17_09_44.946337', 'tour_idx.txt')
+        model_solution_path = os.path.join(args.checkpoint, 'tour_idx.txt')
         # model_solution_path = os.path.join(args.result_path, result_time, 'tour_idx.txt')
 
         f = open(model_solution_path, 'w')
