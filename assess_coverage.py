@@ -48,8 +48,8 @@ if __name__ == "__main__":
             ses[v_idx] = float(s)
 
 
-    covered_grid_prices = [ses[v] for v in tour_idx if v in ses]
-    non_covered_grid_prices = [ses[v] for v in ses.keys() if v not in tour_idx]
+    covered_grid_prices = np.array([ses[v] for v in tour_idx if v in ses])
+    non_covered_grid_prices = np.array([ses[v] for v in ses.keys() if v not in tour_idx])
 
     # print("25% - " + str(np.percentile(ses_values, 10)))
     # print("75% - " + str(np.percentile(ses_values, 80)))
@@ -63,7 +63,9 @@ if __name__ == "__main__":
     bins = np.linspace(np.fromiter(ses.values(), dtype=float).min(), np.fromiter(ses.values(), dtype=float).max(), 20)
     ax.hist(covered_grid_prices, alpha=0.5, density=True, bins=bins, label='covered')
     ax.hist(non_covered_grid_prices, alpha=0.5, density=True, bins=bins, label='not-covered')
+    ax.axvline(covered_grid_prices.mean(), color='C0', linestyle='dashed', linewidth=1)
+    ax.axvline(non_covered_grid_prices.mean(), color='C1', linestyle='dashed', linewidth=1)
     ax.legend()
-    fig.suptitle('Xi’an, China - Distribution of average house price (RMB) \n generated line', fontsize=10)
-    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage_2.png'))
+    fig.suptitle(f'Xi’an, China - Distribution of average house price (RMB) \n generated line from {args.model_folder}', fontsize=10)
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage.png'))
 
