@@ -26,7 +26,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # read the created line from the given model, which is saved as a list of indices in file tour_idx.txt
-    output_loc = os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'tour_idx.txt')
+    # output_loc = os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'tour_idx.txt')
+    output_loc = os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'tour_idx_multiple.txt')
     with open(output_loc, 'r') as f: 
         tour_idx = f.readline()
     
