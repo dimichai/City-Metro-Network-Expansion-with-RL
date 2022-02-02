@@ -254,6 +254,7 @@ def train(actor, critic, train_data, reward_fn,
                 reward_od = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
                                               exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)  #CPU
                 agent_Ac = metro_vrp.agent_grids_price(tour_idx_cpu, args.grid_x_max, price_matrix) #cpu
+                agent_Ac_2 = metro_vrp.agent_grids_price1(tour_idx_cpu, args.grid_x_max, price_matrix) #cpu
 
                 od_list.append(reward_od.item())
                 social_equity_list.append(agent_Ac.item())
@@ -453,19 +454,23 @@ def train_vrp(args):
 
         static, dynamic = train_data.static, train_data.dynamic
 
-        tour_idx, tour_logp = actor(static, dynamic, args.station_num_lim, decoder_input=None, last_hh=None)
+        # generate 10 different lines to have a bigger sample size
+        covered_idx = []
+        for i in range(10):
+            tour_idx, tour_logp = actor(static, dynamic, args.station_num_lim, decoder_input=None, last_hh=None)
+            covered_idx.extend(tour_idx[0].tolist())
 
         result_time = '%s' % datetime.datetime.now().time()
         result_time = result_time.replace(':', '_')
 
-        model_solution_path = os.path.join(args.checkpoint, 'tour_idx.txt')
+        model_solution_path = os.path.join(args.checkpoint, 'tour_idx_multiple.txt')
         # model_solution_path = os.path.join(args.result_path, result_time, 'tour_idx.txt')
 
         f = open(model_solution_path, 'w')
 
         to_write = ''
-        for i in tour_idx[0]:
-            to_write = to_write + str(i.item()) + ','
+        for i in covered_idx:
+            to_write = to_write + str(i) + ','
 
         to_write1 = to_write.rstrip(',')
         f.write(to_write1)
