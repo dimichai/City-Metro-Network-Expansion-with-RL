@@ -564,7 +564,7 @@ if __name__ == '__main__':
      parser.add_argument('--line_unit_price', default=1.0, type=float)
      parser.add_argument('--station_price', default=5.0, type=float)
     
-     parser.add_argument('--dis_lim', default=None)
+     parser.add_argument('--dis_lim', default=None, type=int)
      #example1:  '--dis_lim', default=-1, type=int
      #            od pairs in reward only consider agent line
      #example2:  '--dis_lim', default=None
