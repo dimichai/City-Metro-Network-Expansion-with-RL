@@ -33,19 +33,21 @@ def build_od_matrix(grid_num, od_index_path):
         od_matrix[index1][index2] = weight
     f.close()
 
+    od_matrix =  od_matrix / od_matrix.max()   
+
     return od_matrix
 
-def build_group_od_mask(grid_num, origin_vs):
+def build_group_od_mask(origin_vs, grid_x_max, grid_y_max):
     """Creates mask with the OD dimensions (grid_num = grid_x_max * grid_y_max).
     Assigns 0 to the cells for which the origin square does not belong to the given group.
     Assigns 1 to the cels for which the origin square belongs to the given group. 
     This mask will be later used to filter satisfied OD by groups.
     Args:
-        grid_num ([int]): total number of cells for the OD matrix - should be x * y 
+        grid_x_max/grid_y_max ([int]): total number of cells on the x/y axis 
         origin_vs (list): the vector indices of the origin cells that belong to the group for which the mask is being created.
 
     """
-    mask = np.zeros((grid_num, grid_num))
+    mask = np.zeros((grid_x_max * grid_y_max, grid_x_max * grid_y_max))
 
     for i in origin_vs:
         mask[i][:] = 1
@@ -53,12 +55,34 @@ def build_group_od_mask(grid_num, origin_vs):
     return mask
 
 
+def satisfied_od_mask(tour_idx, grid_x_max, grid_y_mask):
+    # output--satisfied_od_pair:   [[1,2],[2,3]]
+
+    satisfied_od_pair = []
+
+    for i in range(len(tour_idx) - 1):
+        for j in range(i + 1, len(tour_idx)):
+            per_od_pair = []
+            per_od_pair.append(tour_idx[i])
+            per_od_pair.append(tour_idx[j])
+            satisfied_od_pair.append(per_od_pair)
+
+    satisfied_od_mask = np.zeros((grid_x_max * grid_y_mask, grid_x_max * grid_y_mask))
+
+    for pair in satisfied_od_pair:
+        i, j = pair
+
+        satisfied_od_mask[i][j] = 1
+
+    return satisfied_od_mask
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Assess coverage of generated line')
 
     # parser.add_argument('--model_folder', required=True, type=str)
     parser.add_argument('--model_folder', default="21_15_26.123481", type=str)
-    parser.add_argument('--od_index_path', default="od_index.txt", type=str)
+    parser.add_argument('--od_index_path', default="od_index_masked.txt", type=str)
     parser.add_argument('--grid_x_max', default=29, type=int)
     parser.add_argument('--grid_y_max', default=29, type=int)
 
@@ -67,12 +91,15 @@ if __name__ == "__main__":
     # read the created line from the given model, which is saved as a list of indices in file tour_idx.txt
     # output_loc = os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'tour_idx.txt')
     output_loc = os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'tour_idx_multiple.txt')
-    with open(output_loc, 'r') as f: 
+    with open(output_loc, 'r') as f:
         tour_idx = f.readline()
     
     # convert the list of indices into a list of (x, y) pairs where x and y are the grid coordinates.
     tour_idx = np.array(tour_idx.split(','), dtype=np.int64)
-    tour_g_idx = v_to_g(tour_idx, args.grid_x_max, args.grid_y_max)
+    # tour_idx can be read as a series of created lines (e.g. if we run the model multiple times to account for randomness)
+    # but we need the unique squares as well for calculating covered OD flows.
+    tour_idx_unique = np.unique(tour_idx)
+    # tour_g_idx = v_to_g(tour_idx, args.grid_x_max, args.grid_y_max)
 
     avg_price_loc = os.path.join(constants.WORKING_DIR, 'index_average_price.txt')
     ses = defaultdict(list)
@@ -91,17 +118,44 @@ if __name__ == "__main__":
             ses['gy'].append(gy)
             ses['ses'].append(float(s))
     
-    # Create ses dataframe and create bins
+    # Create ses dataframe and create bins.
     df_ses = pd.DataFrame(ses).set_index('v')
-    df_ses['ses_bin'] = pd.qcut(df_ses['ses'], 10, labels=False)
+    # Splits SES into 10 bins of equal size.
+    df_ses['ses_bin'] = pd.qcut(df_ses['ses'], 5, labels=False)
 
-    # Create origin destination flow matrix
+    # Create overall origin destination flow matrix.
     od_mx = build_od_matrix(args.grid_x_max * args.grid_y_max, args.od_index_path)
 
+    # Create a mask [0, 1] for each SES bin, which will be used to filter in only the OD pairs that start from each group.
+    # We do this because we need to calculate total and satisfied OD demand for each bin.
     group_masks = []
-    for g in df_ses['ses_bin'].unique():
-        g_mask = build_group_od_mask(args.grid_x_max * args.grid_y_max, list(df_ses[df_ses['ses_bin'] == g].index))
+    for g in np.sort(df_ses['ses_bin'].unique()):
+        g_mask = build_group_od_mask(list(df_ses[df_ses['ses_bin'] == g].index), args.grid_x_max, args.grid_y_max)
         group_masks.append(g_mask)
+
+    # Multiply the overall OD marix with each group's mask, to create group-specific OD matrices.
+    group_od = []
+    for g in np.sort(df_ses['ses_bin'].unique()):
+        g_od = group_masks[g] * od_mx
+        group_od.append(g_od)
+
+    sat_od_mask = satisfied_od_mask(tour_idx_unique, args.grid_x_max, args.grid_y_max)
+    
+    group_satisfied_od = []
+    for g in np.sort(df_ses['ses_bin'].unique()):
+        g_od = sat_od_mask * group_od[g]
+        group_satisfied_od.append(g_od)
+
+    group_satisfied_od_total = []
+    for g in np.sort(df_ses['ses_bin'].unique()):
+        g_od_total = np.round(group_satisfied_od[g].sum() / group_od[g].sum(), 3)
+        print(f'Group {g}: Total OD: {group_od[g].sum()} - Satisfied OD: {group_satisfied_od[g].sum()} - Fraction: {np.round(group_satisfied_od[g].sum() / group_od[g].sum(), 3)}')
+        group_satisfied_od_total.append(g_od_total)
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.bar(range(5), group_satisfied_od_total)
+    fig.suptitle(f'Xi’an, China - Satisfied OD Percentage by income bin \n New Line generated from {args.model_folder}')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group.png'))
 
     # price_values = np.fromiter(ses.values(), dtype=float)
     # price_normalised =  (price_values - price_values.mean()) / price_values.std()
@@ -129,6 +183,18 @@ if __name__ == "__main__":
     # ax.legend()
     # fig.suptitle(f'Xi’an, China - Distribution of average house price (RMB) \n generated line from {args.model_folder}', fontsize=10)
     # fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage.png'))
+
+
+# %% Diagnostic Plots
+# grid_x_max = 29
+# grid_y_max = 29
+# od_index_path = './od_index_masked.txt'
+
+# # Plot Origin Destination Matrix
+# od = build_od_matrix(grid_x_max * grid_y_max, od_index_path)
+# plt.figure(figsize=(10,10))
+# im = plt.spy(od)
+# plt.colorbar()
 
 
 # %%
