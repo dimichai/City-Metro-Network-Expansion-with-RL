@@ -2,16 +2,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import os
+import constants
 
 
 grid_x_max = 29
 grid_y_max = 29
+od_index_path = './od_index_masked.txt'
 
 def v_to_g(index):
     grid_x = index // grid_x_max
     grid_y = index % grid_y_max
 
     return list(zip(grid_x, grid_y))
+
+#%% Plot average house price in the grid.
+data = np.zeros((grid_x_max, grid_y_max))
+
+avg_price_loc = os.path.join(constants.WORKING_DIR, 'index_average_price.txt')
+with open(avg_price_loc, 'r') as f:
+    for line in f:
+        g, s = line.rstrip().split('\t')
+        # convert grid index string to tuple
+        gx = int(g.split(',')[0])
+        gy = int(g.split(',')[1])
+        s = float(s)
+
+        data[gx][gy] = s
+
+plt.figure(figsize=(10,10))
+im = plt.imshow(data, cmap='coolwarm')
+plt.clim(0, 12000)
+plt.colorbar()
+plt.title("Xi'an - Average house price")
+plt.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_grid.png'))
 
 #%% Plot existing and generated lines in the grid
 data = np.zeros((grid_x_max, grid_y_max))
