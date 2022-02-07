@@ -213,6 +213,12 @@ def train(actor, critic, train_data, reward_fn,
     exclude_pair = metro_vrp.exlude_od_pair(args.grid_x_max)
     od_matirx = metro_vrp.od_matrix_exclude(od_matirx, exclude_pair)
 
+    # with open('./od_index_masked.txt', 'w') as f:
+    #     for i in range(od_matirx.shape[0]):
+    #         for j in range(od_matirx.shape[0]):
+    #             if od_matirx[i][j] != 0:
+    #                 f.write(f'{i}\t{j}\t{od_matirx[i][j]}\n')
+
     if args.social_equity:
     # path_house = r'/home/weiyu/program/metro_expand_combination/index_average_price.txt'
         price_matrix = metro_vrp.build_grid_price(args.path_house, args.grid_x_max, args.grid_y_max)
