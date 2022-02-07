@@ -13,9 +13,8 @@ def v_to_g(index):
 
     return list(zip(grid_x, grid_y))
 
-data = [[0 for j in range(grid_x_max)] for i in range(grid_y_max)]
-
-data = np.array(data)
+#%% Plot existing and generated lines in the grid
+data = np.zeros((grid_x_max, grid_y_max))
 
 line_0 = [(8, 2), (10, 3), (10, 5), (11, 6), (11, 7), (12, 9), (12, 11), (12, 12), (12, 13),
             (12, 14), (12, 15), (12, 16), (12, 17), (12, 18), (12, 20), (11, 22), (11, 23), (11, 24),
@@ -69,4 +68,16 @@ plt.title("Xi'an China - Existing & Generated Metro Lines")
 
 plt.show()
 
+# %% Exclude areas in the original OD matrix.
+# Neighbor squares of the existing lines, whose OD should be considered satisfied because they are right next to the line squares. 
+# line0_nei1 = [(8, 1), (9, 2), (10, 2), (11, 3), (11, 4), (11, 5), (12, 6), (12, 7), (12, 8), (13, 9), (13, 10),
+#                 (13, 11), (13, 12), (13, 13)]
+# line0_nei2 = [(13, 15), (13, 16), (13, 17), (13, 18),(13,19),(13, 20), (12, 21), (12, 22), (12, 23), (12, 24), (12, 25)]
+# line0_nei3 = [(8, 3), (9, 4), (9, 5), (10, 6), (10, 7), (10, 8), (11, 9), (11, 10), (11, 11), (11, 12), (11, 13)]
+# line0_nei4 = [(11,15), (11,16), (11,17), (11,18),(11, 19), (11, 20), (10, 21), (10, 22), (10, 23), (10, 24), (10, 25)]
+
+# exclude_area = line0_nei1 + line0_nei2 + line0_nei3 + line0_nei4
+
+# for g in exclude_area:
+#     data[g] = 5
 # %%
