@@ -117,9 +117,41 @@ if __name__ == "__main__":
             ses['gx'].append(gx)
             ses['gy'].append(gy)
             ses['ses'].append(float(s))
-    
-    # Create ses dataframe and create bins.
+
+    # Create ses dataframe.
     df_ses = pd.DataFrame(ses).set_index('v')
+
+    # Plot the distribution of House Prices
+    # price_values = np.fromiter(ses['ses'], dtype=float)
+    # price_normalised =  (price_values - price_values.mean()) / price_values.std()
+    # fig, ax = plt.subplots(figsize=(5, 5))
+    # ax.hist(price_normalised, bins=20)
+    # fig.suptitle('Xi’an, China - Distribution of average house price (RMB) - Normalised')
+    # fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
+    
+    # Plot the distribution of covered (by the generated lines) vs non-covered squares by house prices.
+    covered_grid_prices = df_ses.loc[np.isin(df_ses.index, tour_idx)]['ses'].values
+    non_covered_grid_prices = df_ses.loc[~np.isin(df_ses.index, tour_idx)]['ses'].values
+
+    # covered_grid_prices = np.array([ses[v] for v in tour_idx if v in ses])
+    # non_covered_grid_prices = np.array([ses[v] for v in ses.keys() if v not in tour_idx])
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.hist(df_ses['ses'].values, bins=20)
+    fig.suptitle('Xi’an, China - Distribution of average house price (RMB)')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr.png'))
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    bins = np.linspace(df_ses['ses'].min(), df_ses['ses'].max(), 20)
+    ax.hist(covered_grid_prices, alpha=0.5, density=True, bins=bins, label='covered')
+    ax.hist(non_covered_grid_prices, alpha=0.5, density=True, bins=bins, label='not-covered')
+    ax.axvline(covered_grid_prices.mean(), color='C0', linestyle='dashed', linewidth=1)
+    ax.axvline(non_covered_grid_prices.mean(), color='C1', linestyle='dashed', linewidth=1)
+    ax.legend()
+    fig.suptitle(f'Xi’an, China - Distribution of average house price (RMB) \n generated line from {args.model_folder}', fontsize=10)
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage.png'))
+    
+    # Plot the equity of the generated line
     # Splits SES into 10 bins of equal size.
     df_ses['ses_bin'] = pd.qcut(df_ses['ses'], 5, labels=False)
 
@@ -151,33 +183,6 @@ if __name__ == "__main__":
     ax.bar(range(5), group_satisfied_od_pct)
     fig.suptitle(f'Xi’an, China - Satisfied OD Percentage by income bin \n New Line generated from {args.model_folder}')
     fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group.png'))
-    
-    # Plot the distribution of House Prices
-    price_values = np.fromiter(ses.values(), dtype=float)
-    price_normalised =  (price_values - price_values.mean()) / price_values.std()
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.hist(price_normalised, bins=20)
-    fig.suptitle('Xi’an, China - Distribution of average house price (RMB) - Normalised')
-    fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
-    
-    # Plot the distribution of covered (by the generated lines) vs non-covered squares by house prices.
-    covered_grid_prices = np.array([ses[v] for v in tour_idx if v in ses])
-    non_covered_grid_prices = np.array([ses[v] for v in ses.keys() if v not in tour_idx])
-
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.hist(ses.values(), bins=20)
-    fig.suptitle('Xi’an, China - Distribution of average house price (RMB)')
-    fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr.png'))
-
-    fig, ax = plt.subplots(figsize=(5, 5))
-    bins = np.linspace(np.fromiter(ses.values(), dtype=float).min(), np.fromiter(ses.values(), dtype=float).max(), 20)
-    ax.hist(covered_grid_prices, alpha=0.5, density=True, bins=bins, label='covered')
-    ax.hist(non_covered_grid_prices, alpha=0.5, density=True, bins=bins, label='not-covered')
-    ax.axvline(covered_grid_prices.mean(), color='C0', linestyle='dashed', linewidth=1)
-    ax.axvline(non_covered_grid_prices.mean(), color='C1', linestyle='dashed', linewidth=1)
-    ax.legend()
-    fig.suptitle(f'Xi’an, China - Distribution of average house price (RMB) \n generated line from {args.model_folder}', fontsize=10)
-    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage.png'))
 
 
 # %% Diagnostic Plots
