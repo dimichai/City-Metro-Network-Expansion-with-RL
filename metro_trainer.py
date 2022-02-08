@@ -564,7 +564,7 @@ if __name__ == '__main__':
      # default=None when there is no initial direct, otherwise example: default ='0,2', type = str
     
      parser.add_argument('--station_num_lim', default=45, type=int)  # limit the number of stations in a line
-     parser.add_argument('--budget', default=210)
+     parser.add_argument('--budget', default=210, type=int)
      # if budget = None, there is no cost limit.
      # budget example:  default=200, type=int
      parser.add_argument('--line_unit_price', default=1.0, type=float)
