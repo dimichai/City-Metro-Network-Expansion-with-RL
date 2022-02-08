@@ -4,6 +4,7 @@ import os
 import constants
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as mcolors
 import pandas as pd
 from collections import defaultdict
 
@@ -122,12 +123,12 @@ if __name__ == "__main__":
     df_ses = pd.DataFrame(ses).set_index('v')
 
     # Plot the distribution of House Prices
-    # price_values = np.fromiter(ses['ses'], dtype=float)
-    # price_normalised =  (price_values - price_values.mean()) / price_values.std()
-    # fig, ax = plt.subplots(figsize=(5, 5))
-    # ax.hist(price_normalised, bins=20)
-    # fig.suptitle('Xi’an, China - Distribution of average house price (RMB) - Normalised')
-    # fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
+    price_values = np.fromiter(ses['ses'], dtype=float)
+    price_normalised =  (price_values - price_values.mean()) / price_values.std()
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.hist(price_normalised, bins=20)
+    fig.suptitle('Xi’an, China - Distribution of average house price (RMB) - Normalised')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
     
     # Plot the distribution of covered (by the generated lines) vs non-covered squares by house prices.
     covered_grid_prices = df_ses.loc[np.isin(df_ses.index, tour_idx)]['ses'].values
@@ -183,6 +184,27 @@ if __name__ == "__main__":
     ax.bar(range(5), group_satisfied_od_pct)
     fig.suptitle(f'Xi’an, China - Satisfied OD Percentage by income bin \n New Line generated from {args.model_folder}')
     fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group.png'))
+
+    # Plot the distribution of house prices for multiple models together.
+    # model_folders = ['16_22_50.580720', '21_15_26.123481']
+
+    # fig, ax = plt.subplots(figsize=(5, 5))
+
+    # for i, m in enumerate(model_folders):
+    #     with open(os.path.join(constants.WORKING_DIR, 'result', m, 'tour_idx_multiple.txt'), 'r') as f:
+    #         tour_idx = f.readline()
+
+    #     tour_idx = np.array(tour_idx.split(','), dtype=np.int64)
+    #     covered_grid_prices = df_ses.loc[np.isin(df_ses.index, tour_idx)]['ses'].values
+
+    #     bins = np.linspace(df_ses['ses'].min(), df_ses['ses'].max(), 20)
+    #     ax.hist(covered_grid_prices, alpha=0.3, density=True, bins=bins, label=m, color=mcolors.tab10(i))
+    #     ax.axvline(covered_grid_prices.mean(), linestyle='dashed', linewidth=1, color=mcolors.tab10(i))
+    #     ax.legend()
+    #     fig.suptitle(f'Xi’an, China - Distribution of average house price (RMB) \n generated line from {args.model_folder}', fontsize=10)
+    # plt.show()
+
+
 
 
 # %% Diagnostic Plots
