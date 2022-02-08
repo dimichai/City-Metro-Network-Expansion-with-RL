@@ -59,6 +59,7 @@ line_equal = v_to_g(np.array([641,613,584,585,586,587,588,559,530,531,502,503,50
 
 # only equity reward - no OD
 line_equity = v_to_g(np.array([732,733,704,675,646,617,588,589,590,591,592,593,594,595,566,567,538,509,510,481,452,453,424,395,396,367,338,339,310,281,252,223,224,225,196,197,198,199,201,202,144,115,86,57,28]))
+line_equity_dislim = v_to_g(np.array([760,704,675,646,617,588,589,590,591,592,593,564,565,566,537,538,509,510,481,482,453,424,395,396,367,338,339,310,281,252,223,224,225,196,197,168,169,171,173,144,115,86,57,28,789]))
 
 for g in line_0:
     data[g] = 1
@@ -75,6 +76,8 @@ for g in line_equal:
 for g in line_equity:
     data[g] = 4
 
+for g in line_equity_dislim:
+    data[g] = 5
 
 # create colormap and legend
 values = np.unique(data[data != 0].ravel())
@@ -83,7 +86,7 @@ plt.figure(figsize=(5,5))
 im = plt.imshow(data)
 
 colors = [ im.cmap(im.norm(value)) for value in values]
-labels = ["Current Lines", "New Line Util", "New Line Util + Equity", "New Line Equity"]
+labels = ["Current Lines", "New Line Util", "New Line Util + Equity", "New Line Equity", "New Line Equity Dislim"]
 # create a patch (proxy artist) for every color 
 patches = [ mpatches.Patch(color=colors[i], label=labels[i] ) for i in range(len(values)) ]
 # put those patched as legend-handles into the legend
