@@ -125,64 +125,59 @@ if __name__ == "__main__":
 
     # Create overall origin destination flow matrix.
     od_mx = build_od_matrix(args.grid_x_max * args.grid_y_max, args.od_index_path)
+    # Mask to filter the OD matrix for satisfied OD flows of the generated line.
+    sat_od_mask = satisfied_od_mask(tour_idx_unique, args.grid_x_max, args.grid_y_max)
 
-    # Create a mask [0, 1] for each SES bin, which will be used to filter in only the OD pairs that start from each group.
-    # We do this because we need to calculate total and satisfied OD demand for each bin.
-    group_masks = []
+    group_masks, group_od, group_satisfied_od, group_satisfied_od_pct = [], [], [], []
     for g in np.sort(df_ses['ses_bin'].unique()):
+        # Create a mask [0, 1] for each SES bin, which will be used to filter in only the OD pairs that start from each group.
+        # We do this because we need to calculate total and satisfied OD demand for each bin.
         g_mask = build_group_od_mask(list(df_ses[df_ses['ses_bin'] == g].index), args.grid_x_max, args.grid_y_max)
         group_masks.append(g_mask)
-
-    # Multiply the overall OD marix with each group's mask, to create group-specific OD matrices.
-    group_od = []
-    for g in np.sort(df_ses['ses_bin'].unique()):
-        g_od = group_masks[g] * od_mx
+        # Multiply the overall OD marix with each group's mask, to create group-specific OD matrices.
+        g_od = g_mask * od_mx
+        # OD matrix is symmetric - therefore the total demand is divided by 2.
+        g_od = g_od/2
         group_od.append(g_od)
-
-    sat_od_mask = satisfied_od_mask(tour_idx_unique, args.grid_x_max, args.grid_y_max)
-    
-    group_satisfied_od = []
-    for g in np.sort(df_ses['ses_bin'].unique()):
-        g_od = sat_od_mask * group_od[g]
-        group_satisfied_od.append(g_od)
-
-    group_satisfied_od_total = []
-    for g in np.sort(df_ses['ses_bin'].unique()):
-        g_od_total = np.round(group_satisfied_od[g].sum() / group_od[g].sum(), 3)
-        print(f'Group {g}: Total OD: {group_od[g].sum()} - Satisfied OD: {group_satisfied_od[g].sum()} - Fraction: {np.round(group_satisfied_od[g].sum() / group_od[g].sum(), 3)}')
-        group_satisfied_od_total.append(g_od_total)
+        # Multiply the satisfied OD mask with the group's OD matrix to get satisfied ODs per group.    
+        g_sat_od = sat_od_mask * g_od
+        group_satisfied_od.append(g_sat_od)
+        # Calculate the satisfied OD percentage per group.
+        g_od_pct = np.round(g_sat_od.sum() / g_od.sum(), 3)
+        print(f'Group {g}: Total OD: {g_od.sum()} - Satisfied OD: {g_sat_od.sum()} - Fraction: {g_od_pct}')
+        group_satisfied_od_pct.append(g_od_pct)
 
     fig, ax = plt.subplots(figsize=(5, 5))
-    ax.bar(range(5), group_satisfied_od_total)
+    ax.bar(range(5), group_satisfied_od_pct)
     fig.suptitle(f'Xi’an, China - Satisfied OD Percentage by income bin \n New Line generated from {args.model_folder}')
     fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group.png'))
-
-    # price_values = np.fromiter(ses.values(), dtype=float)
-    # price_normalised =  (price_values - price_values.mean()) / price_values.std()
-    # fig, ax = plt.subplots(figsize=(5, 5))
-    # ax.hist(price_normalised, bins=20)
-    # fig.suptitle('Xi’an, China - Distribution of average house price (RMB) - Normalised')
-    # fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
-
     
+    # Plot the distribution of House Prices
+    price_values = np.fromiter(ses.values(), dtype=float)
+    price_normalised =  (price_values - price_values.mean()) / price_values.std()
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.hist(price_normalised, bins=20)
+    fig.suptitle('Xi’an, China - Distribution of average house price (RMB) - Normalised')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
+    
+    # Plot the distribution of covered (by the generated lines) vs non-covered squares by house prices.
+    covered_grid_prices = np.array([ses[v] for v in tour_idx if v in ses])
+    non_covered_grid_prices = np.array([ses[v] for v in ses.keys() if v not in tour_idx])
 
-    # covered_grid_prices = np.array([ses[v] for v in tour_idx if v in ses])
-    # non_covered_grid_prices = np.array([ses[v] for v in ses.keys() if v not in tour_idx])
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.hist(ses.values(), bins=20)
+    fig.suptitle('Xi’an, China - Distribution of average house price (RMB)')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr.png'))
 
-    # fig, ax = plt.subplots(figsize=(5, 5))
-    # ax.hist(ses.values(), bins=20)
-    # fig.suptitle('Xi’an, China - Distribution of average house price (RMB)')
-    # fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr.png'))
-
-    # fig, ax = plt.subplots(figsize=(5, 5))
-    # bins = np.linspace(np.fromiter(ses.values(), dtype=float).min(), np.fromiter(ses.values(), dtype=float).max(), 20)
-    # ax.hist(covered_grid_prices, alpha=0.5, density=True, bins=bins, label='covered')
-    # ax.hist(non_covered_grid_prices, alpha=0.5, density=True, bins=bins, label='not-covered')
-    # ax.axvline(covered_grid_prices.mean(), color='C0', linestyle='dashed', linewidth=1)
-    # ax.axvline(non_covered_grid_prices.mean(), color='C1', linestyle='dashed', linewidth=1)
-    # ax.legend()
-    # fig.suptitle(f'Xi’an, China - Distribution of average house price (RMB) \n generated line from {args.model_folder}', fontsize=10)
-    # fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage.png'))
+    fig, ax = plt.subplots(figsize=(5, 5))
+    bins = np.linspace(np.fromiter(ses.values(), dtype=float).min(), np.fromiter(ses.values(), dtype=float).max(), 20)
+    ax.hist(covered_grid_prices, alpha=0.5, density=True, bins=bins, label='covered')
+    ax.hist(non_covered_grid_prices, alpha=0.5, density=True, bins=bins, label='not-covered')
+    ax.axvline(covered_grid_prices.mean(), color='C0', linestyle='dashed', linewidth=1)
+    ax.axvline(non_covered_grid_prices.mean(), color='C1', linestyle='dashed', linewidth=1)
+    ax.legend()
+    fig.suptitle(f'Xi’an, China - Distribution of average house price (RMB) \n generated line from {args.model_folder}', fontsize=10)
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage.png'))
 
 
 # %% Diagnostic Plots
