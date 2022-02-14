@@ -10,15 +10,9 @@ sys.path.append(constants.WORKING_DIR)
 from metro_vrp import MetroDataset
 import metro_vrp
 
-
-
-
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 print('device:',device)
-
-
-
 
 # ##the first step for attention visual, the number of total steps is 4
 # enc_attn_list = []
@@ -34,8 +28,6 @@ class Encoder(nn.Module):
     def forward(self, input): 
         output = self.conv(input)
         return output  # (batch, hidden_size, seq_len) 
-
-
 
 class Attention(nn.Module):
     """Calculates attention over the input nodes given the current state."""
