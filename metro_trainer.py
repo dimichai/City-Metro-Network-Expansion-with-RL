@@ -545,8 +545,8 @@ if __name__ == '__main__':
     
      parser.add_argument('--test', action='store_true', default=False)
     
-     parser.add_argument('--actor_lr', default=5e-4, type=float)
-     parser.add_argument('--critic_lr', default=5e-4, type=float)
+     parser.add_argument('--actor_lr', default=10e-4, type=float)
+     parser.add_argument('--critic_lr', default=10e-4, type=float)
      parser.add_argument('--max_grad_norm', default=2., type=float)
      parser.add_argument('--batch_size', default=128, type=int)
      parser.add_argument('--hidden', dest='hidden_size', default=128, type=int)
