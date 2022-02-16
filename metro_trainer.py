@@ -260,7 +260,7 @@ def train(actor, critic, train_data, reward_fn,
                 reward_od = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
                                               exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)  #CPU
                 agent_Ac = metro_vrp.agent_grids_price(tour_idx_cpu, args.grid_x_max, price_matrix) #cpu
-                agent_Ac_2 = metro_vrp.agent_grids_price_gini(tour_idx_cpu, args.grid_x_max, price_matrix) #cpu
+                # agent_Ac_2 = metro_vrp.agent_grids_price_gini(tour_idx_cpu, args.grid_x_max, price_matrix) #cpu
 
                 od_list.append(reward_od.item())
                 social_equity_list.append(agent_Ac.item())
@@ -282,7 +282,11 @@ def train(actor, critic, train_data, reward_fn,
                 reward = reward.to(device)
 
             else:
-                reward = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
+                if args.od_gini == 1:
+                    reward = metro_vrp.reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
+                                      exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)
+                else:
+                    reward = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
                                       exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)
 
                 od_list.append(reward.item())
@@ -587,7 +591,10 @@ if __name__ == '__main__':
      #                             reward = factor_weight * reward_od + (1 - factor_weight) * agent_Ac
      # if social_equity= 2, reward contains the second social equity: equal sharing
      #                             reward = factor_weight1*reward_od - (1 - factor_weight1)*agent_Ac
-     
+    
+     # whether to use gini to calculate the OD reward or not 
+     parser.add_argument('--od_gini', default=0, type=int)
+
      parser.add_argument('--result_path', default=os.path.join(constants.WORKING_DIR, 'result'), type=str)
      parser.add_argument('--od_index_path', default=os.path.join(constants.WORKING_DIR, 'od_index.txt'), type=str)
      parser.add_argument('--path_house', default=os.path.join(constants.WORKING_DIR, 'index_average_price.txt'), type=str)

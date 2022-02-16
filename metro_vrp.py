@@ -963,6 +963,40 @@ def reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_s
 
     return reward
 
+def reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, od_matirx, grid_x_max, dis_lim):
+
+    satisfied_od_pair = satisfied_od_pair_fn1(tour_idx_cpu, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, grid_x_max, dis_lim)
+    # up ok
+    satisfied_od_mask = satisfied_od_mask_fn1(grid_num, satisfied_od_pair)
+
+    satisfied_od_tensor = torch.masked_select(od_matirx, satisfied_od_mask)
+
+    # Calculate the gini coefficient of the tensor
+    n = satisfied_od_tensor.shape[0]
+    average_rw = sum(satisfied_od_tensor) / n
+    
+    total_diff_sum = torch.tensor(0.0)
+    for i in range(n):
+        per_difference = satisfied_od_tensor[i].view(1) - satisfied_od_tensor
+        per_diff_abs = torch.abs(per_difference, out = None)
+        per_diff_sum = per_diff_abs.sum()
+        total_diff_sum = total_diff_sum + per_diff_sum
+    try:
+        reward_gini = total_diff_sum / (2 * n * n * average_rw)
+    except: #average_rw may be 0
+        reward_gini = torch.tensor(0.0)
+        print(f'excepted reward_gini calculation - avg reward: {average_rw}')
+    # this is needed but why? Why can reward_gini be None?
+    finally:
+        if torch.isnan(reward_gini):  
+            reward_gini = torch.tensor(0.0)
+    return reward_gini
+
+    # reward = satisfied_od_tensor.sum()   # CPU
+
+    # return reward
+
+
 
 
 
