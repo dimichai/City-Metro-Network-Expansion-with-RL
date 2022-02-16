@@ -1035,7 +1035,7 @@ def agent_grids_price(tour_idx_cpu, grid_x_max, price_matrix):
     return agent_Ac
 
 # #Equal Sharing
-def agent_grids_price1(tour_idx_cpu, grid_x_max, price_matrix):
+def agent_grids_price_gini(tour_idx_cpu, grid_x_max, price_matrix):
     agent_grids_num = tour_idx_cpu.size()[1]
 
     grid_x = tour_idx_cpu // grid_x_max
@@ -1090,9 +1090,9 @@ def agent_grids_price1(tour_idx_cpu, grid_x_max, price_matrix):
         total_diff_sum = total_diff_sum + per_diff_sum
     try:
         pi = math.pi
-        agent_Ac = total_diff_sum / (2*pi*pi*average_Ac)
+        # agent_Ac = total_diff_sum / (2*pi*pi*average_Ac)
 
-        # agent_Ac = total_diff_sum / (2 * agent_grids_num * agent_grids_num * average_Ac)
+        agent_Ac = total_diff_sum / (2 * agent_grids_num * agent_grids_num * average_Ac)
         agent_Ac = agent_Ac.data[0]
     except: #average_Ac may be 0
         agent_Ac = torch.tensor(0.0)
