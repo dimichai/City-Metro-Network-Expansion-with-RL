@@ -1019,9 +1019,11 @@ def agent_grids_price(tour_idx_cpu, grid_x_max, price_matrix):
         per_need2 = per_need1.sum(dim=1).float()
 
         per_need3 = per_need2.sqrt()
-
+        
         per_need4 = torch.exp(-0.5 * per_need3)
 
+        # "origin" node should have 0 weight in the final calculation
+        per_need4[i] = 0  # the increase needs exclude the owner.
 
         per_need5 = per_need4 * (tour_idx_price.transpose(0, 1))
 
