@@ -974,7 +974,9 @@ def reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, l
     # Calculate the gini coefficient of the tensor
     n = satisfied_od_tensor.shape[0]
     average_rw = sum(satisfied_od_tensor) / n
-    
+    total_rw = sum(satisfied_od_tensor)
+    var_rw = torch.var(satisfied_od_tensor)
+
     total_diff_sum = torch.tensor(0.0)
     for i in range(n):
         per_difference = satisfied_od_tensor[i].view(1) - satisfied_od_tensor
@@ -990,6 +992,10 @@ def reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, l
     finally:
         if torch.isnan(reward_gini):  
             reward_gini = torch.tensor(0.0)
+    
+    final_rw = total_rw - 100 * var_rw
+    print(f'Total rw: {total_rw} - Var Ac: {var_rw.item()} - Final Reward: {final_rw}')
+
     return reward_gini
 
     # reward = satisfied_od_tensor.sum()   # CPU
@@ -1113,8 +1119,11 @@ def agent_grids_price_gini(tour_idx_cpu, grid_x_max, price_matrix):
         Ac.append(per_Ac1) # Ac example: [tensor(0.), tensor(0.), tensor(0.), tensor(0.), tensor(0.)]
 
     average_Ac = sum(Ac) / agent_grids_num
+    total_Ac = sum(Ac)
 
     Ac_tensor = torch.cat(Ac, dim=0)
+    var_Ac = torch.var(Ac_tensor)
+
 
     total_diff_sum = torch.tensor(0.0)
     for i in range(agent_grids_num):
@@ -1123,7 +1132,6 @@ def agent_grids_price_gini(tour_idx_cpu, grid_x_max, price_matrix):
         per_diff_sum = per_diff_abs.sum()
         total_diff_sum = total_diff_sum + per_diff_sum
     try:
-        pi = math.pi
         # agent_Ac = total_diff_sum / (2*pi*pi*average_Ac)
 
         agent_Ac = total_diff_sum / (2 * agent_grids_num * agent_grids_num * average_Ac)
@@ -1133,6 +1141,9 @@ def agent_grids_price_gini(tour_idx_cpu, grid_x_max, price_matrix):
     finally:
         if torch.isnan(agent_Ac):  
             agent_Ac = torch.tensor(0.0)
+    
+    final_reward = total_Ac - 100 * var_Ac
+    # print(f'Total Ac: {total_Ac} - Var Ac: {var_Ac.item()} - Final Reward: {final_reward}')
     return agent_Ac
 
 
