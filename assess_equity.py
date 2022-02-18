@@ -157,6 +157,7 @@ if __name__ == "__main__":
     df_ses['ses_bin'] = pd.qcut(df_ses['ses'], 5, labels=False)
 
     # Create overall origin destination flow matrix.
+    # Note we already load the masked OD here so no need to mask out satisfied OD from current lines.
     od_mx = build_od_matrix(args.grid_x_max * args.grid_y_max, args.od_index_path)
     # Mask to filter the OD matrix for satisfied OD flows of the generated line.
     sat_od_mask = satisfied_od_mask(tour_idx_unique, args.grid_x_max, args.grid_y_max)
