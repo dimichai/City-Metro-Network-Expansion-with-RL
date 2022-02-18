@@ -7,6 +7,7 @@ Each task must define the following functions:
 * render_fn: Specifies how to plot found solutions. Can be None
 """
 
+from collections import defaultdict
 import os
 import time
 import argparse
@@ -17,6 +18,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import pandas as pd
+import numpy as np
 
 import matplotlib.pyplot as plt
 import sys
@@ -177,6 +180,29 @@ class Critic1(nn.Module): # only dynamic0 + matrix present
         return output
 
 
+def g_to_v(gx, gy, grid_x_max):
+    index = int(gx) * grid_x_max + int(gy)
+
+    return index
+
+def build_group_od_mask(origin_vs, grid_x_max, grid_y_max):
+    """Creates mask with the OD dimensions (grid_num = grid_x_max * grid_y_max).
+    Assigns 0 to the cells for which the origin square does not belong to the given group.
+    Assigns 1 to the cels for which the origin square belongs to the given group. 
+    This mask will be later used to filter satisfied OD by groups.
+    Args:
+        grid_x_max/grid_y_max ([int]): total number of cells on the x/y axis 
+        origin_vs (list): the vector indices of the origin cells that belong to the group for which the mask is being created.
+
+    """
+    mask = torch.zeros((grid_x_max * grid_y_max, grid_x_max * grid_y_max)).to(device)
+
+    for i in origin_vs:
+        mask[i][:] = 1
+        mask[:][i] = 1
+
+    return mask
+
 def train(actor, critic, train_data, reward_fn,
          epoch_max, actor_lr, critic_lr, max_grad_norm, result_path, od_index_path, train_size, **kwargs):
     """Constructs the main actor & critic networks, and performs all training."""
@@ -209,9 +235,42 @@ def train(actor, critic, train_data, reward_fn,
     od_matirx =  od_matirx / torch.max(od_matirx)                     #GPU and CPU need
     # od_matirx = od_matirx.half()  # turn to float16 to recude CUDA memory  GPU need
 
+    # create df_ses using the prices file
+    ses = defaultdict(list)
+    with open(args.path_house, 'r') as f:
+        for line in f:
+            g, s = line.rstrip().split('\t')
+            # convert grid index string to tuple
+            gx = g.split(',')[0]
+            gy = g.split(',')[1]
+
+            v_idx = g_to_v(gx, gy, args.grid_x_max)
+
+            # ses[v_idx].append(float(s))
+            ses['v'].append(v_idx)
+            ses['gx'].append(gx)
+            ses['gy'].append(gy)
+            ses['ses'].append(float(s))
+
     # exclude the needed od pair
     exclude_pair = metro_vrp.exlude_od_pair(args.grid_x_max)
     od_matirx = metro_vrp.od_matrix_exclude(od_matirx, exclude_pair)
+
+    # Create ses dataframe.
+    df_ses = pd.DataFrame(ses).set_index('v')
+    # split ses into bins
+    df_ses['ses_bin'] = pd.qcut(df_ses['ses'], 5, labels=False)
+    group_masks, group_od = [], []
+    for g in np.sort(df_ses['ses_bin'].unique()):
+        # Create a mask [0, 1] for each SES bin, which will be used to filter in only the OD pairs that start from each group.
+        # We do this because we need to calculate total and satisfied OD demand for each bin.
+        g_mask = build_group_od_mask(list(df_ses[df_ses['ses_bin'] == g].index), args.grid_x_max, args.grid_y_max)
+        group_masks.append(g_mask)
+        # Multiply the overall OD marix with each group's mask, to create group-specific OD matrices.
+        g_od = g_mask * od_matirx
+        # OD matrix is symmetric - therefore the total demand is divided by 2.
+        g_od = g_od/2
+        group_od.append(g_od)
 
     # with open('./od_index_masked.txt', 'w') as f:
     #     for i in range(od_matirx.shape[0]):
@@ -285,6 +344,9 @@ def train(actor, critic, train_data, reward_fn,
                 if args.od_gini == 1:
                     reward = metro_vrp.reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
                                       exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)
+                elif args.od_gini == 2:
+                    reward = metro_vrp.reward_fn1_group_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
+                                      exist_line_num, od_matirx, args.grid_x_max, args.dis_lim, df_ses, group_masks, group_od)
                 else:
                     reward = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
                                       exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)
@@ -593,6 +655,9 @@ if __name__ == '__main__':
      #                             reward = factor_weight1*reward_od - (1 - factor_weight1)*agent_Ac
     
      # whether to use gini to calculate the OD reward or not 
+     # 0 - no gini
+     # 1 - the stupid gini that does nothing
+     # 2 - OD - var(OD)
      parser.add_argument('--od_gini', default=0, type=int)
 
      parser.add_argument('--result_path', default=os.path.join(constants.WORKING_DIR, 'result'), type=str)
