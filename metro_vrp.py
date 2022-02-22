@@ -989,7 +989,7 @@ def reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, l
         print(f'excepted reward_gini calculation - avg reward: {average_rw}')
     # this is needed but why? Why can reward_gini be None?
     finally:
-        if torch.isnan(reward_gini):  
+        if torch.isnan(reward_gini):
             reward_gini = torch.tensor(0.0)
     
     final_rw = total_rw - 100 * var_rw
@@ -1023,6 +1023,35 @@ def reward_fn1_group_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_ten
     # print(f'Total grp reward: {total_grp_rw} - Variance: {group_satisfied_od.var()}')
 
     return total_grp_rw - group_satisfied_od.var()
+
+def reward_fn1_group_ggi(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, od_matirx, grid_x_max, dis_lim, df_ses, group_masks, group_od):
+
+    satisfied_od_pair = satisfied_od_pair_fn1(tour_idx_cpu, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, grid_x_max, dis_lim)
+    # up ok
+    satisfied_od_mask = satisfied_od_mask_fn1(grid_num, satisfied_od_pair)
+    satisfied_od_tensor = torch.masked_select(od_matirx, satisfied_od_mask)
+
+    group_satisfied_od, group_satisfied_od_pct = [], []
+    total_grp_rw = 0
+    for g in np.sort(df_ses['ses_bin'].unique()):
+        g_sat_od = satisfied_od_mask * group_od[g]
+        group_satisfied_od.append(g_sat_od.sum().item())
+        # Calculate the satisfied OD percentage per group.
+        g_od_pct = np.round(g_sat_od.sum() / group_od[g].sum(), 3)
+        
+        group_satisfied_od_pct.append(g_od_pct)
+        total_grp_rw += g_sat_od.sum()
+
+    group_satisfied_od = np.array(group_satisfied_od)
+    # Generate weights for each group.
+    weights = np.array([1/2**i for i in range(df_ses['ses_bin'].nunique())])
+    # "Normalize" weights to sum to 1
+    weights = weights/weights.sum()
+
+    reward = np.sum(np.sort(group_satisfied_od) * weights)
+    # print(f'Total grp reward: {total_grp_rw} - Variance: {group_satisfied_od.var()}')
+
+    return reward
 
 
 
