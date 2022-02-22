@@ -62,6 +62,7 @@ line_equity = v_to_g(np.array([732,733,704,675,646,617,588,589,590,591,592,593,5
 # line_equity_dislim = v_to_g(np.array([760,704,675,646,617,588,589,590,591,592,593,564,565,566,537,538,509,510,481,482,453,424,395,396,367,338,339,310,281,252,223,224,225,196,197,168,169,171,173,144,115,86,57,28,789]))
 line_equity_270 = v_to_g(np.array([87,116,145,174,203,232,233,234,263,264,265,294,323,324,353,354,383,384,413,414,443,444,473,474,503,504,505,506,507,508,537,538,567,568,597,598,599,628,629,658,659,688,689,718,719]))
 line_equity_ac = v_to_g(np.array([835,808,810,781,782,753,724,695,666,637,608,550,492,434,405,347,318,260,231,202,173,144,86,57,28]))
+line_od_5var = v_to_g(np.array([289,345,374,373,372,371,370,369,368,397,426,425,424,423,422,421,420,419,448,447,446,445,444,443,472,501,530,559,558,557,586,615,614,612,611,638,667,725,754,812]))
 
 for g in line_0:
     data[g] = 1
@@ -78,7 +79,7 @@ for g in line_equal:
 for g in line_equity:
     data[g] = 4
 
-for g in line_equity_ac:
+for g in line_od_5var:
     data[g] = 5
 
 # for g in line_equity_dislim:
@@ -91,7 +92,7 @@ plt.figure(figsize=(5,5))
 im = plt.imshow(data)
 
 colors = [ im.cmap(im.norm(value)) for value in values]
-labels = ["Current Lines", "New Line Util", "New Line Util + Equity", "New Line Equity", "New Line Equity Gini"]
+labels = ["Current Lines", "New Line Util", "New Line Util + Equity", "New Line Equity", "New Line OD - 5*Var(OD)"]
 # create a patch (proxy artist) for every color 
 patches = [ mpatches.Patch(color=colors[i], label=labels[i] ) for i in range(len(values)) ]
 # put those patched as legend-handles into the legend
