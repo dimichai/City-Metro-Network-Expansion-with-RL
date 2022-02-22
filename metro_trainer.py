@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import sys
 import constants
 sys.path.append(constants.WORKING_DIR)
-
+import csv
 from metro_model import DRL4Metro, Encoder
 import metro_vrp
 
@@ -195,7 +195,7 @@ def build_group_od_mask(origin_vs, grid_x_max, grid_y_max):
         origin_vs (list): the vector indices of the origin cells that belong to the group for which the mask is being created.
 
     """
-    mask = torch.zeros((grid_x_max * grid_y_max, grid_x_max * grid_y_max)).to(device)
+    mask = torch.zeros((grid_x_max * grid_y_max, grid_x_max * grid_y_max))
 
     for i in origin_vs:
         mask[i][:] = 1
@@ -526,11 +526,11 @@ def train_vrp(args):
 
         static, dynamic = train_data.static, train_data.dynamic
 
-        # generate 10 different lines to have a bigger sample size
+        # generate 128 different lines to have a bigger sample size
         covered_idx = []
-        for i in range(10):
+        for i in range(128):
             tour_idx, tour_logp = actor(static, dynamic, args.station_num_lim, decoder_input=None, last_hh=None)
-            covered_idx.extend(tour_idx[0].tolist())
+            covered_idx.append(tour_idx[0].tolist())
 
         result_time = '%s' % datetime.datetime.now().time()
         result_time = result_time.replace(':', '_')
@@ -538,15 +538,22 @@ def train_vrp(args):
         model_solution_path = os.path.join(args.checkpoint, 'tour_idx_multiple.txt')
         # model_solution_path = os.path.join(args.result_path, result_time, 'tour_idx.txt')
 
-        f = open(model_solution_path, 'w')
 
-        to_write = ''
-        for i in covered_idx:
-            to_write = to_write + str(i) + ','
 
-        to_write1 = to_write.rstrip(',')
-        f.write(to_write1)
-        f.close()
+        with open(model_solution_path, "w", newline='') as f:
+            wr = csv.writer(f)
+            wr.writerows(covered_idx)
+
+
+        # f = open(model_solution_path, 'w')
+
+        # to_write = ''
+        # for i in covered_idx:
+        #     to_write = to_write + str(i) + ','
+
+        # to_write1 = to_write.rstrip(',')
+        # f.write(to_write1)
+        # f.close()
 
 
     if not args.test:  # train

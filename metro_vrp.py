@@ -911,7 +911,6 @@ def satisfied_od_pair_fn1(tour_idx_cpu, agent_grid_list, line_full_tensor, line_
         satisfied_od_pair = satisfied_od_pair1
 
     else:
-
         satisfied_od_pair2 = []
 
         for i in range(exist_line_num):
@@ -1023,7 +1022,7 @@ def reward_fn1_group_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_ten
     group_satisfied_od = np.array(group_satisfied_od)
     # print(f'Total grp reward: {total_grp_rw} - Variance: {group_satisfied_od.var()}')
 
-    return total_grp_rw - 10 * group_satisfied_od.var()
+    return total_grp_rw - group_satisfied_od.var()
 
 
 
