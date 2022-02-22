@@ -1051,7 +1051,7 @@ def reward_fn1_group_ggi(tour_idx_cpu, grid_num, agent_grid_list, line_full_tens
     reward = np.sum(np.sort(group_satisfied_od) * weights)
     # print(f'Total grp reward: {total_grp_rw} - Variance: {group_satisfied_od.var()}')
 
-    return reward
+    return torch.tensor(reward)
 
 
 
