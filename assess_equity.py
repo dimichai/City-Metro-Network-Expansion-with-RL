@@ -7,6 +7,17 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as mcolors
 import pandas as pd
 from collections import defaultdict
+import csv
+import torch
+
+exist_line_num = 2
+line_full_tensor = [
+                    torch.tensor([[234], [293],[294],[295],[325],[326],[357],[358],[359],[360],[361],[362],[363],[364],[365],[366],[367],[368],[341],[342],[343],[344   ]]), 
+                    torch.tensor([[ 13],[ 43],[ 72],[101],[130],[159],[188],[217],[246],[275],[304],[333],[362],[391],[420],[449],[478],[507],[536],[565],[594],[623],[652],[681],[710],[739],[768]])
+                ]
+
+line_station_list = [[234, 293, 295, 325, 326, 357, 359, 360, 361, 362, 363, 364, 365, 366, 368, 341, 342, 343, 344], 
+                    [13, 43, 101, 130, 159, 188, 246, 275, 304, 362, 391, 420, 449, 478, 507, 536, 594, 623, 681, 710, 768]]
 
 
 def v_to_g(index, grid_x_max, grid_y_max):
@@ -55,19 +66,58 @@ def build_group_od_mask(origin_vs, grid_x_max, grid_y_max):
 
     return mask
 
+def agent_exist_line_pair1(tour_idx_cpu, agent_grid_list, per_line_full_tensor, per_line_station_list):
+    satisfied_od_pair = []
+
+    agent_line = (tour_idx_cpu - per_line_full_tensor)
+
+    intersection_need = (agent_line == 0).nonzero()
+
+    if intersection_need.size()[0] == 0:
+        pass # there is no interaction
+
+    else:
+        interaction_index_mult = intersection_need[:, 1]
+        interaction_index_list = []
+        for i in interaction_index_mult:
+            interaction_index_list.append(agent_grid_list[i])
+
+        for i in agent_grid_list:
+            if i not in interaction_index_list:
+                for j in per_line_station_list:
+                    if j not in interaction_index_list:
+                        per_od_pair = []
+                        per_od_pair.append(i)
+                        per_od_pair.append(j)
+                        satisfied_od_pair.append(per_od_pair)
+
+    return satisfied_od_pair # for each element: the agent station is the first
+
 
 def satisfied_od_mask(tour_idx, grid_x_max, grid_y_mask):
     # output--satisfied_od_pair:   [[1,2],[2,3]]
 
-    satisfied_od_pair = []
+    # agent_grid_list = tour_idx[0].tolist()
+
+    satisfied_od_pair1 = []
 
     for i in range(len(tour_idx) - 1):
         for j in range(i + 1, len(tour_idx)):
             per_od_pair = []
             per_od_pair.append(tour_idx[i])
             per_od_pair.append(tour_idx[j])
-            satisfied_od_pair.append(per_od_pair)
+            satisfied_od_pair1.append(per_od_pair)
 
+    satisfied_od_pair2 = []
+    for i in range(exist_line_num):
+        per_line_full_tensor = line_full_tensor[i]
+        per_line_station_list = line_station_list[i]
+
+        per_satisfied_od_pair2 = agent_exist_line_pair1(torch.tensor([[tour_idx]]), tour_idx, per_line_full_tensor, per_line_station_list)
+        
+        satisfied_od_pair2 = satisfied_od_pair2 + per_satisfied_od_pair2
+
+    satisfied_od_pair = satisfied_od_pair1 + satisfied_od_pair2
     satisfied_od_mask = np.zeros((grid_x_max * grid_y_mask, grid_x_max * grid_y_mask))
 
     for pair in satisfied_od_pair:
@@ -92,14 +142,32 @@ if __name__ == "__main__":
     # read the created line from the given model, which is saved as a list of indices in file tour_idx.txt
     # output_loc = os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'tour_idx.txt')
     output_loc = os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'tour_idx_multiple.txt')
+
+    # read generated lines from output file
+    gen_lines = []
+    # get all covered squares from the generated lines
+    unique_squares = []
     with open(output_loc, 'r') as f:
-        tour_idx = f.readline()
+        for row in csv.reader(f):
+            line = []
+            for s in row:
+                s = int(s)
+                line.append(s)
+                if s not in unique_squares:
+                    unique_squares.append(s)
+            
+            gen_lines.append(line)
+
+            
+
+    # with open(output_loc, 'r') as f:
+    #     tour_idx = f.readline()
     
     # convert the list of indices into a list of (x, y) pairs where x and y are the grid coordinates.
-    tour_idx = np.array(tour_idx.split(','), dtype=np.int64)
+    # tour_idx = np.array(tour_idx.split(','), dtype=np.int64)
     # tour_idx can be read as a series of created lines (e.g. if we run the model multiple times to account for randomness)
     # but we need the unique squares as well for calculating covered OD flows.
-    tour_idx_unique = np.unique(tour_idx)
+    # tour_idx_unique = np.unique(tour_idx)
     # tour_g_idx = v_to_g(tour_idx, args.grid_x_max, args.grid_y_max)
 
     avg_price_loc = os.path.join(constants.WORKING_DIR, 'index_average_price.txt')
@@ -131,11 +199,8 @@ if __name__ == "__main__":
     fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
     
     # Plot the distribution of covered (by the generated lines) vs non-covered squares by house prices.
-    covered_grid_prices = df_ses.loc[np.isin(df_ses.index, tour_idx)]['ses'].values
-    non_covered_grid_prices = df_ses.loc[~np.isin(df_ses.index, tour_idx)]['ses'].values
-
-    # covered_grid_prices = np.array([ses[v] for v in tour_idx if v in ses])
-    # non_covered_grid_prices = np.array([ses[v] for v in ses.keys() if v not in tour_idx])
+    covered_grid_prices = df_ses.loc[np.isin(df_ses.index, unique_squares)]['ses'].values
+    non_covered_grid_prices = df_ses.loc[~np.isin(df_ses.index, unique_squares)]['ses'].values
 
     fig, ax = plt.subplots(figsize=(5, 5))
     ax.hist(df_ses['ses'].values, bins=20)
@@ -153,16 +218,15 @@ if __name__ == "__main__":
     fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'index_average_price_distr_by_coverage.png'))
     
     # Plot the equity of the generated line
-    # Splits SES into 10 bins of equal size.
+    # Splits SES into 5 bins of equal size.
     df_ses['ses_bin'] = pd.qcut(df_ses['ses'], 5, labels=False)
 
     # Create overall origin destination flow matrix.
     # Note we already load the masked OD here so no need to mask out satisfied OD from current lines.
     od_mx = build_od_matrix(args.grid_x_max * args.grid_y_max, args.od_index_path)
-    # Mask to filter the OD matrix for satisfied OD flows of the generated line.
-    sat_od_mask = satisfied_od_mask(tour_idx_unique, args.grid_x_max, args.grid_y_max)
 
-    group_masks, group_od, group_satisfied_od, group_satisfied_od_pct = [], [], [], []
+    # Create group specific masks and OD matrices:
+    group_masks, group_od = [], []
     for g in np.sort(df_ses['ses_bin'].unique()):
         # Create a mask [0, 1] for each SES bin, which will be used to filter in only the OD pairs that start from each group.
         # We do this because we need to calculate total and satisfied OD demand for each bin.
@@ -173,17 +237,46 @@ if __name__ == "__main__":
         # OD matrix is symmetric - therefore the total demand is divided by 2.
         g_od = g_od/2
         group_od.append(g_od)
-        # Multiply the satisfied OD mask with the group's OD matrix to get satisfied ODs per group.    
-        g_sat_od = sat_od_mask * g_od
-        group_satisfied_od.append(g_sat_od)
-        # Calculate the satisfied OD percentage per group.
-        g_od_pct = np.round(g_sat_od.sum() / g_od.sum(), 3)
-        print(f'Group {g}: Total OD: {g_od.sum()} - Satisfied OD: {g_sat_od.sum()} - Fraction: {g_od_pct}')
-        group_satisfied_od_pct.append(g_od_pct)
+
+    # group_sat_ods: total satisfied ODs that belong to either group
+    # total_sat_ods: total satisfied ODs (some squares do not have a group)
+    group_sat_ods, total_sat_ods = [], []
+    sat_ods_by_group = []
+    sat_ods_by_group_pct = []
+    for line in gen_lines:
+        # Mask to filter the OD matrix for satisfied OD flows of the generated line.
+        sat_od_mask = satisfied_od_mask(line, args.grid_x_max, args.grid_y_max)
+        group_satisfied_od, group_satisfied_od_pct = [], []
+
+        for g in np.sort(df_ses['ses_bin'].unique()):
+            # Multiply the satisfied OD mask with the group's OD matrix to get satisfied ODs per group.    
+            g_sat_od = sat_od_mask * group_od[g]
+            group_satisfied_od.append(g_sat_od)
+            # Calculate the satisfied OD percentage per group.
+            g_od_pct = np.round(g_sat_od.sum() / group_od[g].sum(), 3)
+            # print(f'Group {g}: Total OD: {g_od.sum()} - Satisfied OD: {g_sat_od.sum()} - Fraction: {g_od_pct}')
+            group_satisfied_od_pct.append(g_od_pct)
+        
+        g_total_sat_od = sum([g.sum() for g in group_satisfied_od])
+
+        group_sat_ods.append(g_total_sat_od)
+        total_sat_ods.append((sat_od_mask * od_mx).sum())
+        sat_ods_by_group.append([g.sum() for g in group_satisfied_od])
+        sat_ods_by_group_pct.append(group_satisfied_od_pct)
+
+        # print(f'Total satisfied OD: {(sat_od_mask * od_mx).sum()} - Total satisfied group OD: {g_total_sat_od}')
+
+    mean_sat_od_by_group = np.array(sat_ods_by_group).mean(axis=0)
+    mean_sat_od_by_group_pct = np.array(sat_ods_by_group_pct).mean(axis=0)
 
     fig, ax = plt.subplots(figsize=(5, 5))
-    ax.bar(range(5), group_satisfied_od_pct)
-    fig.suptitle(f'Xi’an, China - Satisfied OD Percentage by income bin \n New Line generated from {args.model_folder}')
+    ax.bar(range(5), mean_sat_od_by_group_pct)
+    fig.suptitle(f'Xi’an, China - Mean Satisfied OD % by house price bin \n Total OD: {round(100*sum(total_sat_ods)/128/od_mx.sum(), 2)}% - Total group OD: {round(100*sum(group_sat_ods)/128/sum([g.sum() for g in group_od]), 2)}% \n New Line generated from {args.model_folder}')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group_pct.png'))
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.bar(range(5), mean_sat_od_by_group)
+    fig.suptitle(f'Xi’an, China - Mean Satisfied OD by house price bin \n Total OD: {round(sum(total_sat_ods)/128, 2)} - Total group OD: {round(sum(group_sat_ods)/128, 2)} \n New Line generated from {args.model_folder}')
     fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group.png'))
 
     # Plot the distribution of house prices for multiple models together.
