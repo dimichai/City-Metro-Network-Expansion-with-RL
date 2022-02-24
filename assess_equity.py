@@ -127,6 +127,16 @@ def satisfied_od_mask(tour_idx, grid_x_max, grid_y_mask):
 
     return satisfied_od_mask
 
+def sum_of_diffs(x):
+    """Returns the sum of absolute differences between all elements in the given array
+
+    Args:
+        x (np.array): input array
+
+    Returns:
+        int: sum of absolute differences
+    """
+    return np.absolute(sum(x - np.reshape(x, (len(x), 1)))).sum()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Assess coverage of generated line')
@@ -268,6 +278,12 @@ if __name__ == "__main__":
 
     mean_sat_od_by_group = np.array(sat_ods_by_group).mean(axis=0)
     mean_sat_od_by_group_pct = np.array(sat_ods_by_group_pct).mean(axis=0)
+
+    # mean_diff_1 = np.array([sum_of_diffs(g) for g in sat_ods_by_group]).mean()
+    # for i in range(sat_ods_by_group[0]):
+    #     j = i + 1
+    #     try:
+
 
     fig, ax = plt.subplots(figsize=(5, 5))
     ax.bar(range(5), mean_sat_od_by_group_pct)
