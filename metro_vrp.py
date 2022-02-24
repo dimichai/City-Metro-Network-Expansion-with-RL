@@ -1042,17 +1042,18 @@ def reward_fn1_group_ggi(tour_idx_cpu, grid_num, agent_grid_list, line_full_tens
         group_satisfied_od_pct.append(g_od_pct)
         total_grp_rw += g_sat_od.sum()
 
-    group_satisfied_od = np.array(group_satisfied_od)
+    # group_satisfied_od = np.array(group_satisfied_od)
+    group_satisfied_od_pct = np.array(group_satisfied_od_pct)
     # Generate weights for each group.
-    weights = np.array([1/2**i for i in range(df_ses['ses_bin'].nunique())])
+    weights = np.array([1/(2**i) for i in range(df_ses['ses_bin'].nunique())])
     # "Normalize" weights to sum to 1
     weights = weights/weights.sum()
 
-    reward = np.sum(np.sort(group_satisfied_od) * weights)
+    # reward = np.sum(np.sort(group_satisfied_od) * weights)
+    reward = np.sum(np.sort(group_satisfied_od_pct) * weights)
     # print(f'Total grp reward: {total_grp_rw} - Variance: {group_satisfied_od.var()}')
 
     return torch.tensor(reward)
-
 
 
 
