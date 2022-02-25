@@ -138,6 +138,13 @@ def sum_of_diffs(x):
     """
     return np.absolute(sum(x - np.reshape(x, (len(x), 1)))).sum()
 
+def ggi(x, w_denom):
+    weights = np.array([1/(w_denom**i) for i in range(x.shape[0])])
+    # "Normalize" weights to sum to 1
+    weights = weights/weights.sum()
+
+    return np.sum(np.sort(x) * weights)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Assess coverage of generated line')
 
@@ -279,22 +286,31 @@ if __name__ == "__main__":
     mean_sat_od_by_group = np.array(sat_ods_by_group).mean(axis=0)
     mean_sat_od_by_group_pct = np.array(sat_ods_by_group_pct).mean(axis=0)
 
+    ggi_od = ggi(mean_sat_od_by_group, 2)
+    ggi_od_pct = ggi(mean_sat_od_by_group_pct, 2)
+    
     # mean_diff_1 = np.array([sum_of_diffs(g) for g in sat_ods_by_group]).mean()
     # for i in range(sat_ods_by_group[0]):
     #     j = i + 1
     #     try:
 
+    # fig, ax = plt.subplots(figsize=(5, 5))
+    # ax.bar(range(5), mean_sat_od_by_group_pct)
+    # fig.suptitle(f'Xi’an, China - Mean Satisfied OD % by house price bin \n Total OD: {round(100*sum(total_sat_ods)/128/od_mx.sum(), 2)}% - Total group OD: {round(100*sum(group_sat_ods)/128/sum([g.sum() for g in group_od]), 2)}% (GGI:{round(ggi_od_pct, 6)}) \n New Line generated from {args.model_folder}')
+    # fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group_pct.png'))
 
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.bar(range(5), mean_sat_od_by_group_pct)
-    fig.suptitle(f'Xi’an, China - Mean Satisfied OD % by house price bin \n Total OD: {round(100*sum(total_sat_ods)/128/od_mx.sum(), 2)}% - Total group OD: {round(100*sum(group_sat_ods)/128/sum([g.sum() for g in group_od]), 2)}% \n New Line generated from {args.model_folder}')
-    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group_pct.png'))
+    # fig, ax = plt.subplots(figsize=(5, 5))
+    # ax.bar(range(5), mean_sat_od_by_group)
+    # fig.suptitle(f'Xi’an, China - Mean Satisfied OD by house price bin \n Total OD: {round(sum(total_sat_ods)/128, 2)} - Total group OD: {round(sum(group_sat_ods)/128, 2)} (GGI:{round(ggi_od, 2)}) \n New Line generated from {args.model_folder}')
+    # fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group.png'))
 
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.bar(range(5), mean_sat_od_by_group)
-    fig.suptitle(f'Xi’an, China - Mean Satisfied OD by house price bin \n Total OD: {round(sum(total_sat_ods)/128, 2)} - Total group OD: {round(sum(group_sat_ods)/128, 2)} \n New Line generated from {args.model_folder}')
-    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group.png'))
+    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+    axs[0].bar(range(5), mean_sat_od_by_group)
+    axs[0].title.set_text(f'Xi’an, China - Mean Satisfied OD by house price bin \n Total OD: {round(sum(total_sat_ods)/128, 2)} - Total group OD: {round(sum(group_sat_ods)/128, 2)} (GGI:{round(ggi_od, 2)}) \n New Line generated from {args.model_folder}')
+    axs[1].bar(range(5), mean_sat_od_by_group_pct)
+    axs[1].title.set_text(f'Xi’an, China - Mean Satisfied OD % by house price bin \n Total OD: {round(100*sum(total_sat_ods)/128/od_mx.sum(), 2)}% - Total group OD: {round(100*sum(group_sat_ods)/128/sum([g.sum() for g in group_od]), 2)}% (GGI:{round(ggi_od_pct, 6)}) \n New Line generated from {args.model_folder}')
 
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'satisfied_od_by_group_joint.png'))
     # Plot the distribution of house prices for multiple models together.
     # model_folders = ['16_22_50.580720', '21_15_26.123481']
 
