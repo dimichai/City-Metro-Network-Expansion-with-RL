@@ -350,6 +350,9 @@ def train(actor, critic, train_data, reward_fn,
                 elif args.od_gini == 3:
                     reward = metro_vrp.reward_fn1_group_ggi(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
                                       exist_line_num, od_matirx, args.grid_x_max, args.dis_lim, df_ses, group_masks, group_od)
+                elif args.od_gini == 4:
+                    reward = metro_vrp.reward_fn1_group_min(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
+                                      exist_line_num, od_matirx, args.grid_x_max, args.dis_lim, df_ses, group_masks, group_od)
                 else:
                     reward = metro_vrp.reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list,
                                       exist_line_num, od_matirx, args.grid_x_max, args.dis_lim)
@@ -669,6 +672,7 @@ if __name__ == '__main__':
      # 1 - the stupid gini that does nothing
      # 2 - OD - var(OD)
      # 3 - OD - GGI(OD) over groups
+     # 4 - OD - Min (OD) over groups
      parser.add_argument('--od_gini', default=0, type=int)
 
      parser.add_argument('--result_path', default=os.path.join(constants.WORKING_DIR, 'result'), type=str)
