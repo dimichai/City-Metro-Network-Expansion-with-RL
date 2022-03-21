@@ -145,6 +145,26 @@ def ggi(x, w_denom):
 
     return np.sum(np.sort(x) * weights)
 
+def gen_line_plot_grid(lines, grid_x_max, grid_y_max):
+    """Generates a grid_x_max * grid_y_max grid where each grid is valued by the frequency it appears in the generated lines.
+    Essentially creates a grid of the given line to plot later on.
+
+    Args:
+        line (list): list of generated lines of the model
+        grid_x_max (_type_): _description_
+        grid_y_mask (_type_): _description_
+    """
+    data = np.zeros((grid_x_max, grid_y_max))
+
+    for line in lines:
+        line_g = v_to_g(np.array(line), grid_x_max, grid_y_max)
+        for g in line_g:
+            data[g] += 1
+    
+    data = data/len(lines)
+
+    return data
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Assess coverage of generated line')
 
@@ -175,18 +195,6 @@ if __name__ == "__main__":
             
             gen_lines.append(line)
 
-            
-
-    # with open(output_loc, 'r') as f:
-    #     tour_idx = f.readline()
-    
-    # convert the list of indices into a list of (x, y) pairs where x and y are the grid coordinates.
-    # tour_idx = np.array(tour_idx.split(','), dtype=np.int64)
-    # tour_idx can be read as a series of created lines (e.g. if we run the model multiple times to account for randomness)
-    # but we need the unique squares as well for calculating covered OD flows.
-    # tour_idx_unique = np.unique(tour_idx)
-    # tour_g_idx = v_to_g(tour_idx, args.grid_x_max, args.grid_y_max)
-
     avg_price_loc = os.path.join(constants.WORKING_DIR, 'index_average_price.txt')
     ses = defaultdict(list)
     with open(avg_price_loc, 'r') as f:
@@ -214,6 +222,13 @@ if __name__ == "__main__":
     ax.hist(price_normalised, bins=20)
     fig.suptitle('Xi’an, China - Distribution of average house price (RMB) - Normalised')
     fig.savefig(os.path.join(constants.WORKING_DIR, 'index_average_price_distr_norm.png'))
+
+    # Plot the average generated line (from the multiple sample generated lines)
+    plot_grid = gen_line_plot_grid(gen_lines, args.grid_x_max, args.grid_y_max)
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.imshow(plot_grid)
+    fig.suptitle(f'Xi’an, China - Average Generated line \n from {args.model_folder}')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'result', args.model_folder, 'average_generated_line.png'))
     
     # Plot the distribution of covered (by the generated lines) vs non-covered squares by house prices.
     covered_grid_prices = df_ses.loc[np.isin(df_ses.index, unique_squares)]['ses'].values
