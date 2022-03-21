@@ -962,6 +962,36 @@ def reward_fn1(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_s
 
     return reward
 
+def tensor_gini(tensor):
+    """Calculate the gini coefficient of a given tensor.
+
+    Args:
+        tensor (torch.tensor): input tensor
+    """
+
+    n = tensor.shape[0]
+    avg = sum(tensor) / n
+    # total = sum(tensor)
+    # var = torch.var(tensor)
+
+    total_diff_sum = torch.tensor(0.0)
+    for i in range(n):
+        per_difference = tensor[i].view(1) - tensor
+        per_diff_abs = torch.abs(per_difference, out = None)
+        per_diff_sum = per_diff_abs.sum()
+        total_diff_sum = total_diff_sum + per_diff_sum
+    try:
+        gini = total_diff_sum / (2 * n * n * avg)
+    except: #average_rw may be 0
+        gini = torch.tensor(0.0)
+    # this is needed but why? Why can reward_gini be None?
+    finally:
+        if torch.isnan(gini):
+            gini = torch.tensor(0.0)
+    
+    return gini
+
+
 def reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, od_matirx, grid_x_max, dis_lim):
 
     satisfied_od_pair = satisfied_od_pair_fn1(tour_idx_cpu, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, grid_x_max, dis_lim)
@@ -971,35 +1001,58 @@ def reward_fn1_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, l
     satisfied_od_tensor = torch.masked_select(od_matirx, satisfied_od_mask)
 
     # Calculate the gini coefficient of the tensor
-    n = satisfied_od_tensor.shape[0]
-    average_rw = sum(satisfied_od_tensor) / n
+    # n = satisfied_od_tensor.shape[0]
+    # average_rw = sum(satisfied_od_tensor) / n
     total_rw = sum(satisfied_od_tensor)
     var_rw = torch.var(satisfied_od_tensor)
 
-    total_diff_sum = torch.tensor(0.0)
-    for i in range(n):
-        per_difference = satisfied_od_tensor[i].view(1) - satisfied_od_tensor
-        per_diff_abs = torch.abs(per_difference, out = None)
-        per_diff_sum = per_diff_abs.sum()
-        total_diff_sum = total_diff_sum + per_diff_sum
-    try:
-        reward_gini = total_diff_sum / (2 * n * n * average_rw)
-    except: #average_rw may be 0
-        reward_gini = torch.tensor(0.0)
-        print(f'excepted reward_gini calculation - avg reward: {average_rw}')
-    # this is needed but why? Why can reward_gini be None?
-    finally:
-        if torch.isnan(reward_gini):
-            reward_gini = torch.tensor(0.0)
+    reward_gini = tensor_gini(satisfied_od_tensor)
     
     final_rw = total_rw - 100 * var_rw
-    print(f'Total rw: {total_rw} - Var Ac: {var_rw.item()} - Final Reward: {final_rw}')
+    # print(f'Total rw: {total_rw} - Var Ac: {var_rw.item()} - Final Reward: {final_rw}')
 
-    return reward_gini
+    return final_rw
 
-    # reward = satisfied_od_tensor.sum()   # CPU
+def reward_fn1_total_od_times_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, od_matirx, grid_x_max, dis_lim):
 
-    # return reward
+    satisfied_od_pair = satisfied_od_pair_fn1(tour_idx_cpu, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, grid_x_max, dis_lim)
+    # up ok
+    satisfied_od_mask = satisfied_od_mask_fn1(grid_num, satisfied_od_pair)
+    satisfied_od_tensor = torch.masked_select(od_matirx, satisfied_od_mask)
+
+    # Calculate the gini coefficient of the tensor
+    total_rw = sum(satisfied_od_tensor)
+    # var_rw = torch.var(satisfied_od_tensor)
+
+    reward_gini = tensor_gini(satisfied_od_tensor)
+    
+    return total_rw * (1 - reward_gini)
+    # final_rw = total_rw - 100 * var_rw
+    # print(f'Total rw: {total_rw} - Var Ac: {var_rw.item()} - Final Reward: {final_rw}')
+
+def reward_fn1_group_times_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, od_matirx, grid_x_max, dis_lim, df_ses, group_masks, group_od):
+
+    satisfied_od_pair = satisfied_od_pair_fn1(tour_idx_cpu, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, grid_x_max, dis_lim)
+    # up ok
+    satisfied_od_mask = satisfied_od_mask_fn1(grid_num, satisfied_od_pair)
+    satisfied_od_tensor = torch.masked_select(od_matirx, satisfied_od_mask)
+
+    group_satisfied_od, group_satisfied_od_pct = [], []
+    total_grp_rw = 0
+    for g in np.sort(df_ses['ses_bin'].unique()):
+        g_sat_od = satisfied_od_mask * group_od[g]
+        group_satisfied_od.append(g_sat_od.sum().item())
+        # Calculate the satisfied OD percentage per group.
+        g_od_pct = np.round(g_sat_od.sum() / group_od[g].sum(), 3)
+        
+        group_satisfied_od_pct.append(g_od_pct)
+        total_grp_rw += g_sat_od.sum()
+
+    od_gini = tensor_gini(torch.tensor(group_satisfied_od))
+    # group_satisfied_od = np.array(group_satisfied_od)
+
+    return total_grp_rw * (1 - od_gini)
+
 
 def reward_fn1_group_gini(tour_idx_cpu, grid_num, agent_grid_list, line_full_tensor, line_station_list, exist_line_num, od_matirx, grid_x_max, dis_lim, df_ses, group_masks, group_od):
 
