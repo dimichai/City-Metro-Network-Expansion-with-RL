@@ -151,8 +151,8 @@ def gen_line_plot_grid(lines, grid_x_max, grid_y_max):
 
     Args:
         line (list): list of generated lines of the model
-        grid_x_max (_type_): _description_
-        grid_y_mask (_type_): _description_
+        grid_x_max (int): nr of lines in the grid
+        grid_y_mask (int): nr of columns in the grid
     """
     data = np.zeros((grid_x_max, grid_y_max))
 
@@ -256,6 +256,21 @@ if __name__ == "__main__":
     # Create overall origin destination flow matrix.
     # Note we already load the masked OD here so no need to mask out satisfied OD from current lines.
     od_mx = build_od_matrix(args.grid_x_max * args.grid_y_max, args.od_index_path)
+
+    # Calculate aggregate origin-destination flow matrix for each grid square.
+    # A measure of importance of each square.
+    agg_od_g = np.zeros((args.grid_x_max, args.grid_y_max))
+    agg_od_v = od_mx.sum(axis=1)
+    # Get the grid indices.
+    g = v_to_g(np.array([i for i in range(agg_od_v.shape[0])]), args.grid_x_max, args.grid_y_max)
+    for i in range(agg_od_v.shape[0]):
+        g = v_to_g(np.array([i]), args.grid_x_max, args.grid_y_max)[0]
+        agg_od_g[g[0], g[1]] = agg_od_v[i]
+    # Plot the aggregate od
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.imshow(agg_od_g)
+    fig.suptitle(f'Xi’an, China - Aggregate OD by square')
+    fig.savefig(os.path.join(constants.WORKING_DIR, 'aggregate_od_by_square.png'))
 
     # Create group specific masks and OD matrices:
     group_masks, group_od = [], []
