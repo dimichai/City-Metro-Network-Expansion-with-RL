@@ -219,7 +219,8 @@ class DRL4Metro(nn.Module):
         vector_index_allow = torch.tensor([1])
         
 
-        specify_original_station = 0  
+        specify_original_station = 0
+        # For this problem, there are no dynamic elements - so dynamic tensor is zeros.
         if dynamic.sum():
             specify_original_station = 1
 
