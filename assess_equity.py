@@ -10,6 +10,8 @@ from collections import defaultdict
 import csv
 import torch
 
+device = torch.device('cpu')
+
 exist_line_num = 2
 line_full_tensor = [
                     torch.tensor([[234], [293],[294],[295],[325],[326],[357],[358],[359],[360],[361],[362],[363],[364],[365],[366],[367],[368],[341],[342],[343],[344   ]]), 
@@ -113,7 +115,7 @@ def satisfied_od_mask(tour_idx, grid_x_max, grid_y_mask):
         per_line_full_tensor = line_full_tensor[i]
         per_line_station_list = line_station_list[i]
 
-        per_satisfied_od_pair2 = agent_exist_line_pair1(torch.tensor([[tour_idx]]), tour_idx, per_line_full_tensor, per_line_station_list)
+        per_satisfied_od_pair2 = agent_exist_line_pair1(torch.tensor([tour_idx]), tour_idx, per_line_full_tensor, per_line_station_list)
         
         satisfied_od_pair2 = satisfied_od_pair2 + per_satisfied_od_pair2
 
@@ -126,6 +128,51 @@ def satisfied_od_mask(tour_idx, grid_x_max, grid_y_mask):
         satisfied_od_mask[i][j] = 1
 
     return satisfied_od_mask
+
+def satisfied_od_mask_new(tour_idx: torch.Tensor) -> torch.Tensor:
+        """Computes a boolean mask of the satisfied OD flows of a given line (tour).
+
+        Args:
+            tour_idx (torch.Tensor): vector indices resembling a line.
+
+        Returns:
+            torch.Tensor: mask of self.grid_size * self.grid_size of satisfied OD flows.
+        """
+        # Satisfied OD pairs from the new line, only considering the new line od demand.
+        sat_od_pairs = torch.combinations(tour_idx.flatten(), 2)
+
+        # Satisfied OD pairs from the new line, by considering connections to existing lines.
+        # For each line, we look for intersections to the existing lines (full, not only grids with stations).
+        # If intersection is found, we add the extra satisfied ODs
+        for i, line_full in enumerate(line_full_tensor):
+            line = line_station_list[i]
+            line = torch.tensor(line, device=device)
+            line = line[:, None]
+            intersection_full_line = ((tour_idx - line_full) == 0).nonzero()
+            if intersection_full_line.size()[0] != 0:
+                intersection_station_line = ((tour_idx - line) == 0).nonzero()
+
+                # We filter the line grids based on the intersection between the new line and the sations of old lines.
+                line_mask = torch.ones(line.numel(), dtype=torch.bool)
+                line_mask[intersection_station_line[:, 0]] = False
+                line_connections = line[line_mask]
+                
+                # We filter the tour grids based on the intersection between the new line and the full old lines.
+                # Note: here we use the full line filter, because we want to leave out the connection of the intersection
+                # between the new line and existing line stations, as we assume this is already covered by the existing lines.
+                tour_mask = torch.ones(tour_idx.numel(), dtype=torch.bool)
+                tour_mask[intersection_full_line[:, 1]] = False
+                # Note this won't work with multi-dimensional tour_idx
+                tour_connections = tour_idx[0, tour_mask]
+
+                conn_sat_od_pairs = torch.cartesian_prod(tour_connections, line_connections.flatten())
+                sat_od_pairs = torch.cat((sat_od_pairs, conn_sat_od_pairs))
+        
+        # Calculate a mask over the OD matrix, based on the satisfied OD pairs.
+        od_mask = torch.zeros(29*29, 29*29, device=device).byte()
+        od_mask[sat_od_pairs[:, 0], sat_od_pairs[:, 1]] = 1
+        
+        return od_mask
 
 def sum_of_diffs(x):
     """Returns the sum of absolute differences between all elements in the given array
@@ -293,6 +340,13 @@ if __name__ == "__main__":
     for line in gen_lines:
         # Mask to filter the OD matrix for satisfied OD flows of the generated line.
         sat_od_mask = satisfied_od_mask(line, args.grid_x_max, args.grid_y_max)
+        # sat_od_mask_new = satisfied_od_mask_new(torch.tensor([line], device=device))
+        # with open('./x_s.txt', 'w') as f:
+        #     for x in sat_od_mask.nonzero()[0]:
+        #         f.write(str(x) + '\n')
+        # with open('./y_s.txt', 'w') as f:
+        #     for y in sat_od_mask.nonzero()[1]:
+        #         f.write(str(y) + '\n')
         group_satisfied_od, group_satisfied_od_pct = [], []
 
         for g in np.sort(df_ses['ses_bin'].unique()):
